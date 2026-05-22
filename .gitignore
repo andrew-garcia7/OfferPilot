@@ -1,0 +1,12 @@
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/prisma/*.db
+backend/prisma/*.db-journal
+backend/src/generated/
+backend/src/uploads/
+client/node_modules/
+client/dist/
+client/.env
+Downloads/
+*.log

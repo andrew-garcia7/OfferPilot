@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String?
+  avatar    String?
+  provider  String   @default("local")   // "local" | "google"
+  googleId  String?  @unique
+  githubId  String?  @unique
+  createdAt DateTime @default(now())
+  lastLogin DateTime @default(now())
+
+  interviews   Interview[]
+  resumeDrafts ResumeDraft[]
+}
+
+model Resume {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  text      String
+  atsScore  Float?
+  createdAt DateTime @default(now())
+}
+
+model ResumeDraft {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  title       String   @default("Untitled Resume")
+  payload     String
+  templateKey String   @default("software_engineer")
+  atsScore    Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User?           @relation(fields: [userId], references: [id])
+  versions ResumeVersion[]
+}
+
+model ResumeVersion {
+  id        Int      @id @default(autoincrement())
+  draftId   Int
+  label     String   @default("Version")
+  payload   String
+  atsScore  Float?
+  createdAt DateTime @default(now())
+
+  draft ResumeDraft @relation(fields: [draftId], references: [id])
+}
+
+model JobDescription {
+  id             Int      @id @default(autoincrement())
+  resumeId       Int?
+  text           String
+  requiredSkills String   @default("[]")
+  matchScore     Float?
+  createdAt      DateTime @default(now())
+}
+
+model Interview {
+  id         Int       @id @default(autoincrement())
+  userId     Int?
+  category   String
+  level      String
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  score      Float?
+  transcript String?
+
+  questions  String    @default("[]") // ✅ safest
+
+  user      User?      @relation(fields: [userId], references: [id])
+  responses Response[]
+}
+
+model Response {
+  id          Int      @id @default(autoincrement())
+  interviewId Int
+  question    String
+  answer      String
+  score       Float
+  createdAt   DateTime @default(now())
+
+  interview Interview @relation(fields: [interviewId], references: [id])
+}
