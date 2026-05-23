@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "../generated/prisma-client";
+import { PrismaClient } from "@prisma/client";
 import passport from "../passport";
 import { signToken, requireAuth } from "../middleware/auth";
 
