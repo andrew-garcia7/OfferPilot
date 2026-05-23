@@ -238,22 +238,35 @@ async function touchSession(req: Request, userId: number) {
 router.get("/me", requireAuth, async (req, res) => {
   try {
     await ensureTables();
-    await touchSession(req, req.user!.userId);
+    await touchSession(req, (req.user as any).userId);
 
     const user = await prisma.user.findUnique({
-      where: { id: req.user!.userId },
+      where: { id: (req.user as any).userId },
       select: { name: true, avatar: true },
     });
 
-    const stored = (await getStoredSettings(req.user!.userId)) ?? DEFAULT_SETTINGS;
-    const payload = deepMerge(stored, {
-      account: {
-        username: stored.account.username || user?.name || "",
-        avatar: stored.account.avatar || user?.avatar || "",
-      },
-    });
+  const stored =
+  (await getStoredSettings((req.user as any).userId)) ??
+  DEFAULT_SETTINGS;
 
-    await saveSettings(req.user!.userId, payload);
+const payload = deepMerge(stored, {
+  account: {
+    username: stored.account.username || user?.name || "",
+    bio: stored.account.bio || "",
+    role: stored.account.role || "",
+    socialLinks: stored.account.socialLinks || {
+      github: "",
+      linkedin: "",
+      website: "",
+      x: "",
+    },
+    resumeUrl: stored.account.resumeUrl || "",
+    skills: stored.account.skills || [],
+    avatar: stored.account.avatar || user?.avatar || "",
+  },
+}); 
+
+    await saveSettings((req.user as any).userId, payload);
     res.json({ settings: payload });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || "Failed to load settings" });
@@ -263,17 +276,17 @@ router.get("/me", requireAuth, async (req, res) => {
 router.put("/me", requireAuth, async (req, res) => {
   try {
     await ensureTables();
-    await touchSession(req, req.user!.userId);
+    await touchSession(req, (req.user as any).userId);
 
-    const current = (await getStoredSettings(req.user!.userId)) ?? DEFAULT_SETTINGS;
+    const current = (await getStoredSettings((req.user as any).userId)) ?? DEFAULT_SETTINGS;
     const patch = asObject(req.body?.settings ?? req.body ?? {});
     const next = deepMerge(current, patch as Partial<SettingsPayload>);
 
-    await saveSettings(req.user!.userId, next);
+    await saveSettings((req.user as any).userId, next);
 
     if (next.account.username || next.account.avatar) {
       await prisma.user.update({
-        where: { id: req.user!.userId },
+        where: { id: (req.user as any).userId },
         data: {
           name: next.account.username || null,
           avatar: next.account.avatar || null,
@@ -301,7 +314,7 @@ router.post("/password", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "New password and confirmation do not match" });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    const user = await prisma.user.findUnique({ where: { id: (req.user as any).userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
     if (!user.password) {
       return res.status(400).json({ error: "Password login not enabled for this account" });
@@ -322,7 +335,7 @@ router.post("/password", requireAuth, async (req, res) => {
 router.get("/sessions", requireAuth, async (req, res) => {
   try {
     await ensureTables();
-    await touchSession(req, req.user!.userId);
+    await touchSession(req, (req.user as any).userId);
 
     const rows = await prisma.$queryRawUnsafe<SessionRow[]>(
       `
@@ -339,7 +352,7 @@ router.get("/sessions", requireAuth, async (req, res) => {
       WHERE user_id = ?
       ORDER BY last_seen DESC
     `,
-      req.user!.userId
+      (req.user as any).userId
     );
 
     const sessions = rows.map((row) => ({
@@ -360,14 +373,14 @@ router.get("/sessions", requireAuth, async (req, res) => {
 
 router.delete("/sessions/:sessionId", requireAuth, async (req, res) => {
   try {
-    const targetId = cleanSessionId(req.params.sessionId);
+    const targetId = cleanSessionId(String(req.params.sessionId));
     if (!targetId) return res.status(400).json({ error: "Invalid session id" });
 
     await ensureTables();
     const own = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
       "SELECT id FROM user_sessions WHERE id = ? AND user_id = ? LIMIT 1",
       targetId,
-      req.user!.userId
+      (req.user as any).userId
     );
     if (!own[0]) return res.status(404).json({ error: "Session not found" });
 
@@ -376,7 +389,7 @@ router.delete("/sessions/:sessionId", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Cannot remove current session here" });
     }
 
-    await prisma.$executeRawUnsafe("DELETE FROM user_sessions WHERE id = ? AND user_id = ?", targetId, req.user!.userId);
+    await prisma.$executeRawUnsafe("DELETE FROM user_sessions WHERE id = ? AND user_id = ?", targetId, (req.user as any).userId);
     res.json({ ok: true });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || "Failed to remove session" });
@@ -391,11 +404,11 @@ router.post("/sessions/logout-others", requireAuth, async (req, res) => {
     if (currentId) {
       await prisma.$executeRawUnsafe(
         "DELETE FROM user_sessions WHERE user_id = ? AND id <> ?",
-        req.user!.userId,
+        (req.user as any).userId,
         currentId
       );
     } else {
-      await prisma.$executeRawUnsafe("DELETE FROM user_sessions WHERE user_id = ?", req.user!.userId);
+      await prisma.$executeRawUnsafe("DELETE FROM user_sessions WHERE user_id = ?", (req.user as any).userId);
     }
 
     res.json({ ok: true });

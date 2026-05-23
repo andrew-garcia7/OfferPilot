@@ -133,7 +133,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
-    where: { id: Number(req.user!.userId) },
+    where: { id: Number((req.user as any).userId) },
     select: { id: true, name: true, email: true, avatar: true, provider: true, createdAt: true, lastLogin: true },
   });
   if (!user) return res.status(404).json({ error: "User not found" });
@@ -143,7 +143,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
 // Optional Auth.js-compatible session endpoint
 router.get("/session", requireAuth, async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
-    where: { id: Number(req.user!.userId) },
+    where: { id: Number((req.user as any).userId) },
     select: { id: true, name: true, email: true, avatar: true, provider: true },
   });
   if (!user) return res.status(404).json({ error: "User not found" });
