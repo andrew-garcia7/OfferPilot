@@ -1,6 +1,6 @@
 import type { AuthUser } from "../contexts/AuthContext";
 
-const API_BASE = (import.meta.env.VITE_API_URL?.trim() || "http://localhost:4000").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_URL?.trim()).replace(/\/$/, "");
 
 export type AvatarSource = {
   avatar?: string | null;

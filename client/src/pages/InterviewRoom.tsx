@@ -912,7 +912,7 @@ export default function InterviewRoom() {
   }, [canAutoCreateRoom, defaultRouteRoomId, displayName, interviewId, passcode, roomId, searchParams, userAvatar, userId]);
 
   const connectRealtime = useCallback(() => {
-    const apiBase = String(API.defaults.baseURL || "http://localhost:4000");
+    const apiBase = String(API.defaults.baseURL );
     const socketUrl = new URL(apiBase).origin;
 
     const socket = io(socketUrl, {
